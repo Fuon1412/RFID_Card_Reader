@@ -86,7 +86,7 @@ function seedProducts() {
   console.log('Đã thêm dữ liệu sản phẩm vào database');
 }
 
-const client = mqtt.connect('mqtt://localhost:1883');
+const client = mqtt.connect('mqtt://127.0.0.1:1883');
 
 client.on('connect', () => {
   console.log('Đã kết nối tới MQTT broker');
