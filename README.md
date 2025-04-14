@@ -53,9 +53,10 @@
 1. Vào thư mục Web_GUI (Thư mục con bên trong)
 2. Gõ lệnh `npm install` để giải nén thư viện.
 3. Gõ lệnh `sudo npm install -g serve`
-4. Gõ lệnh `npm run build` để build code (phần này sẽ tốn từ 10-30s)
-5. Gõ lệnh `serve -d dist` để chạy code đã build được
-6. Truy cập vào link http://localhost:3000 để xác nhận web đã chạy ổn
+4. Thay ảnh **QR_demo.png** trong thư mục **public** bằng ảnh QR thật nếu muốn dùng ảnh QR thậtthật
+5. Gõ lệnh `npm run build` để build code (phần này sẽ tốn từ 10-30s)
+6. Gõ lệnh `serve -d dist` để chạy code đã build được
+7. Truy cập vào link http://localhost:3000 để xác nhận web đã chạy ổn
 
 ## 3. Setup cho phần đầu đọc thẻ RFID 
 1. Trong phần code xuất ra định dạng dữ liệu của máy, cần thêm đoạn code trong thư mục MqttPublisherTest vào
