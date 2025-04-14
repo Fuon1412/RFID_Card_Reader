@@ -13,8 +13,8 @@ Yêu cầu:- Thiết bị có Nodejs, NPM, Mosquitto version mới nhất, dùng
                 listener 1883<br>
                 allow_anonymous true<br>
             ![alt text](image.png)<br>
-            + Ấn tổ hợp phím Ctrl+O để lưu lại, sau đó ấn Enter rồi tổ hợp phím Ctrl+X.
-            + Gõ lệnh <b>sudo systemctl restart mosquitto</b> để hệ thống nhận cấu hình.
+            + Ấn tổ hợp phím Ctrl+O để lưu lại, sau đó ấn Enter rồi tổ hợp phím Ctrl+X.<br>
+            + Gõ lệnh <b>sudo systemctl restart mosquitto</b> để hệ thống nhận cấu hình.<br>
         - Config để đầu đọc thẻ có cấu trúc JSON như sau:<br>
             {<br>
                 "Type": "6C",<br>
