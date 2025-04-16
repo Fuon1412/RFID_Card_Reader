@@ -59,7 +59,9 @@
 7. Truy cập vào link http://localhost:3000 để xác nhận web đã chạy ổn
 
 ## 3. Setup cho phần đầu đọc thẻ RFID 
-1. Trong phần code xuất ra định dạng dữ liệu của máy, cần thêm đoạn code trong thư mục MqttPublisherTest vào
+1. Trong phần code xuất ra định dạng dữ liệu của máy, cần thêm đoạn code trong thư mục MqttPublisherTest vào.
    
-   Lưu ý: đọc kĩ comment trong code để tránh sai sót
+   Lưu ý: đọc kĩ comment trong code để tránh sai sót.
 2. Ở phần code xuất dữ liệu của thiết bị, gọi hàm ra và thay tham số như trong comment của code là được.
+
+## Lưu ý:

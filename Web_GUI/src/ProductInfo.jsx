@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import io from 'socket.io-client';
+import QRCode from 'qrcode';
 import {
     Alert, Typography, Divider,
     Button, Row, Col, Modal, Space, message, Table, Image
 } from 'antd';
+import { useNavigate } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 
@@ -12,22 +14,55 @@ const ProductInfo = () => {
     const [error, setError] = useState(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isLocked, setIsLocked] = useState(false);
+    const [qrImage, setQrImage] = useState(null);
 
-    const API_URL = 'http://localhost:3001';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    const windowIp = import.meta.env.VITE_WINDOW_IP;
+    const port = import.meta.env.VITE_PORT;
+    const navigate = useNavigate();
 
-    const handlePayment = () => {
+    const handlePayment = async () => {
         if (products.length === 0) {
             message.warning("Không có sản phẩm để thanh toán!");
             return;
         }
-        setIsModalVisible(true);
+
         setIsLocked(true);
+
+        try {
+            const response = await fetch(`${API_URL}/api/order`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ products })
+            });
+
+            const result = await response.json();
+            console.log("Kết quả tạo đơn hàng:", result);
+            const transactionId = result;
+
+            const qrLink = `http://${windowIp}:${port}/invoice/${transactionId}`;
+            const qr = await QRCode.toDataURL(qrLink);
+            setQrImage(qr);
+
+            setIsModalVisible(true);
+
+        } catch (err) {
+            console.error("Lỗi khi tạo đơn hàng:", err);
+            message.error("Lỗi khi tạo đơn hàng!");
+            setIsLocked(false);
+        }
     };
+
 
     const handleCloseModal = () => {
         setIsModalVisible(false);
-        setProducts([]);
+        setQrImage(null);
         setIsLocked(false);
+        setProducts([]);
+    };
+
+    const handleViewInvoice = () => {
+        navigate(`/invoice/view`, { state: { products } });
     };
 
     useEffect(() => {
@@ -44,13 +79,8 @@ const ProductInfo = () => {
                     setProducts([]);
                 } else {
                     setError(null);
-                    setProducts(prevProducts => {
-                        // Chuyển đổi data thành mảng nếu nó không phải là mảng
-                        const newData = Array.isArray(data) ? data : [data];
-
-                        // Không kiểm tra trùng lặp, thêm tất cả các sản phẩm mới vào giỏ hàng
-                        return [...prevProducts, ...newData];
-                    });
+                    const newData = Array.isArray(data) ? data : [data];
+                    setProducts(prevProducts => [...prevProducts, ...newData]);
                 }
             }
         });
@@ -63,8 +93,8 @@ const ProductInfo = () => {
         return () => socket.disconnect();
     }, [isLocked]);
 
-    const totalItems = products.length; // Số lượng sản phẩm
-    const totalPrice = products.reduce((acc, curr) => acc + (curr.price || 0), 0); // Tổng giá
+    const totalItems = products.length;
+    const totalPrice = products.reduce((acc, curr) => acc + (curr.price || 0), 0);
     const discount = 0;
     const finalPrice = totalPrice - discount;
 
@@ -77,7 +107,7 @@ const ProductInfo = () => {
             render: (image_url, record) =>
                 !record.error && image_url ? (
                     <Image
-                        src={`${API_URL}/${image_url}`}
+                        src={`${image_url}`}
                         alt={record.name}
                         width={60}
                         height={60}
@@ -112,6 +142,9 @@ const ProductInfo = () => {
 
     return (
         <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
             padding: 24,
             backgroundColor: '#f5f5f5',
             minHeight: '100vh'
@@ -119,7 +152,6 @@ const ProductInfo = () => {
             <div style={{
                 width: 1028,
                 height: 720,
-                margin: '0 auto',
                 background: '#fff',
                 padding: 24,
                 borderRadius: 12,
@@ -128,7 +160,7 @@ const ProductInfo = () => {
                 flexDirection: 'column',
                 justifyContent: 'space-between',
             }}>
-                <Title level={3}>🛒 Hóa đơn thanh toán </Title>
+                <Title level={3}>🛒 Hóa đơn thanh toán</Title>
 
                 {error && (
                     <Alert
@@ -142,7 +174,6 @@ const ProductInfo = () => {
 
                 {!error && products.length > 0 ? (
                     <>
-                        {/* Đặt phần bảng để mở rộng từ dưới */}
                         <div style={{ flexGrow: 1, overflowY: 'auto' }}>
                             <Table
                                 dataSource={products}
@@ -214,15 +245,18 @@ const ProductInfo = () => {
                     <Title level={3} style={{ color: '#1890ff' }}>
                         {finalPrice.toLocaleString()}đ
                     </Title>
-                    <Text>Sử dụng ứng dụng ngân hàng<br />hoặc ví điện tử để quét mã</Text>
+                    <Text>Quét mã QR để xem hóa đơn</Text>
 
                     <div style={{ marginTop: 16 }}>
-                        <img src="/qr_demo.png" alt="QR Code" style={{ width: 180 }} />
+                        {qrImage ? (
+                            <img src={qrImage} alt="QR Code" style={{ width: 180 }} />
+                        ) : (
+                            <Text>Đang tạo mã QR...</Text>
+                        )}
                     </div>
 
                     <Space style={{ marginTop: 20 }}>
-                        <Button>In mã</Button>
-                        <Button type="primary">Kiểm tra</Button>
+                        <Button onClick={handleViewInvoice}>Xem hóa đơn</Button>
                         <Button onClick={handleCloseModal}>Đóng</Button>
                     </Space>
                 </div>
