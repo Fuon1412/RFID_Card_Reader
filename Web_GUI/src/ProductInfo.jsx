@@ -5,7 +5,7 @@ import {
     Alert, Typography, Divider,
     Button, Row, Col, Modal, Space, message, Table, Image
 } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import {ShoppingCartOutlined, DropboxOutlined} from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
@@ -16,10 +16,9 @@ const ProductInfo = () => {
     const [isLocked, setIsLocked] = useState(false);
     const [qrImage, setQrImage] = useState(null);
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    const API_URL = import.meta.env.VITE_API_URL;
     const windowIp = import.meta.env.VITE_WINDOW_IP;
     const port = import.meta.env.VITE_PORT;
-    const navigate = useNavigate();
 
     const handlePayment = async () => {
         if (products.length === 0) {
@@ -61,10 +60,6 @@ const ProductInfo = () => {
         setProducts([]);
     };
 
-    const handleViewInvoice = () => {
-        navigate(`/invoice/view`, { state: { products } });
-    };
-
     useEffect(() => {
         const socket = io(API_URL);
 
@@ -91,7 +86,7 @@ const ProductInfo = () => {
         });
 
         return () => socket.disconnect();
-    }, [isLocked]);
+    }, [isLocked, API_URL]);
 
     const totalItems = products.length;
     const totalPrice = products.reduce((acc, curr) => acc + (curr.price || 0), 0);
@@ -142,25 +137,32 @@ const ProductInfo = () => {
 
     return (
         <div style={{
+            position: 'fixed', // Sử dụng position fixed để chiếm toàn bộ viewport
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            padding: 24,
+            padding: '2rem',
             backgroundColor: '#f5f5f5',
-            minHeight: '100vh'
+            overflow: 'auto', // Thêm overflow để xử lý nội dung lớn hơn màn hình
         }}>
             <div style={{
-                width: 1028,
-                height: 720,
+                maxWidth: '1024px',
+                height: 'auto',
                 background: '#fff',
-                padding: 24,
-                borderRadius: 12,
+                padding: '2rem',
+                borderRadius: '12px',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
+                width: '100%',
+                maxHeight: '90vh', // Giới hạn chiều cao để không tràn ra ngoài viewport nếu cần
             }}>
-                <Title level={3}>🛒 Hóa đơn thanh toán</Title>
+                <Title level={3}><ShoppingCartOutlined />Hóa đơn thanh toán</Title>
 
                 {error && (
                     <Alert
@@ -223,10 +225,10 @@ const ProductInfo = () => {
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        height: '80%',
+                        height: '100%', // Chiếm toàn bộ chiều cao của container cha
                         color: '#888'
                     }}>
-                        <div style={{ fontSize: 60, marginBottom: 16 }}>📦</div>
+                        <div style={{ fontSize: 60, marginBottom: 16 }}><DropboxOutlined /></div>
                         <Text style={{ fontSize: 18 }}>Chưa có sản phẩm nào</Text>
                         <Text style={{ fontSize: 16, color: '#aaa' }}>Quét các sản phẩm để thêm vào giỏ hàng</Text>
                     </div>
@@ -241,7 +243,7 @@ const ProductInfo = () => {
                 width={360}
             >
                 <div style={{ textAlign: 'center', padding: 12 }}>
-                    <Title level={4}>💸 Số tiền cần thanh toán</Title>
+                    <Title level={4}>Số tiền cần thanh toán</Title>
                     <Title level={3} style={{ color: '#1890ff' }}>
                         {finalPrice.toLocaleString()}đ
                     </Title>
@@ -256,7 +258,6 @@ const ProductInfo = () => {
                     </div>
 
                     <Space style={{ marginTop: 20 }}>
-                        <Button onClick={handleViewInvoice}>Xem hóa đơn</Button>
                         <Button onClick={handleCloseModal}>Đóng</Button>
                     </Space>
                 </div>

@@ -95,7 +95,7 @@ app.post('/api/payment', async (req, res) => {
 
   try {
     const order = await makePayment(transactionId);
-    res.status(200).json(order.status);
+    res.status(200).json({ status: 'success', transactionId: order.id });
   } catch (error) {
     console.error('Lỗi khi thanh toán:', error);
     res.status(500).json({ error: 'Lỗi khi thanh toán' });
@@ -108,8 +108,6 @@ io.on('connection', (socket) => {
 });
 
 // --- Start server ---
-server.listen(PORT, () => {
-  console.log(`Server đang chạy tại http://localhost:${PORT}`);
-});
+server.listen(PORT, "0.0.0.0");
 
 

@@ -129,10 +129,18 @@ async function getProductsById(id) {
 async function createOrder(products) {
     try {
         const transactionId = uuidv4();
-        const total_amount = products.reduce((sum, item) => sum + (item.price || 0), 0);
+
+        const total_amount = products.reduce((sum, item) => sum + (item.quantity || 1) * (item.price || 0), 0);
+
+        const orderItems = products.map(item => ({
+            productId: item.id,
+            name: item.name,
+            quantity: item.quantity,
+        }));
+
         const order = {
             id: transactionId,
-            item: products,
+            items: orderItems,
             total_amount: total_amount,
             time_stamp: new Date().toISOString(),
             status: "pending"
