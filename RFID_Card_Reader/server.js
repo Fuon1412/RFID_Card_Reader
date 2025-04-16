@@ -4,7 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const express = require('express');
 const cors = require('cors');
-const { getProductsById , createOrder, makePayment} = require('./database');
+const { getProductsById , createOrder, makePayment, getBillFromTransactionId} = require('./database');
 
 // --- App & Server ---
 const app = express();
@@ -51,7 +51,7 @@ client.on('message', async (topic, message) => {
             sku: sku,
             name: product.name,
             price: product.price,
-            image_url: product.image_url || ''
+            image_url: product.imageUrl || ''
           };
         } else {
           console.warn(`  [${index}] Không tìm thấy sản phẩm với SKU: ${sku}`);
@@ -72,6 +72,24 @@ client.on('message', async (topic, message) => {
 });
 
 // --- REST API ---
+app.get('/api/bill/:transactionId', async (req, res) => {
+  const { transactionId } = req.params;
+
+  if (!transactionId) {
+    return res.status(400).json({ error: 'Thiếu transactionId' });
+  }
+
+  try {
+    const bill = await getBillFromTransactionId(transactionId);
+    if (!bill) {
+      return res.status(404).json({ error: 'Không tìm thấy hóa đơn' });
+    }
+    res.status(200).json(bill);
+  } catch (error) {
+    console.error('Lỗi khi lấy hóa đơn:', error);
+    res.status(500).json({ error: 'Lỗi khi lấy hóa đơn' });
+  }
+});
 app.post('/api/order', async (req, res) => {
   const { products } = req.body;
   if (!products || products.length === 0) {
@@ -101,6 +119,8 @@ app.post('/api/payment', async (req, res) => {
     res.status(500).json({ error: 'Lỗi khi thanh toán' });
   }
 });
+
+
 
 // --- Socket.IO ---
 io.on('connection', (socket) => {

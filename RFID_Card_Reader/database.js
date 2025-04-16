@@ -122,7 +122,7 @@ async function getProductsById(id) {
         }
     } catch (error) {
         console.error("Lỗi khi lấy sản phẩm:", error);
-        throw error; 
+        throw error;
     }
 }
 
@@ -130,18 +130,34 @@ async function createOrder(products) {
     try {
         const transactionId = uuidv4();
 
-        const total_amount = products.reduce((sum, item) => sum + (item.quantity || 1) * (item.price || 0), 0);
+        const groupedBySku = {};
 
-        const orderItems = products.map(item => ({
-            productId: item.id,
-            name: item.name,
-            quantity: item.quantity,
-        }));
+        products.forEach(product => {
+            const sku = product.sku;
+            const quantity = product.quantity || 1;
+
+            if (!groupedBySku[sku]) {
+                const { rfid, subtotal, ...productWithoutRfidAndSubtotal } = product;
+                groupedBySku[sku] = {
+                    ...productWithoutRfidAndSubtotal,
+                    quantity
+                };
+            } else {
+                groupedBySku[sku].quantity += quantity;
+            }
+        });
+
+        const processedItems = Object.values(groupedBySku);
+
+        const total_amount = processedItems.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0
+        );
 
         const order = {
             id: transactionId,
-            items: orderItems,
-            total_amount: total_amount,
+            items: processedItems,
+            total_amount,
             time_stamp: new Date().toISOString(),
             status: "pending"
         };
@@ -159,16 +175,88 @@ async function makePayment(transactionId) {
         const orderRef = db.ref(`transactions/${transactionId}`);
         const snapshot = await orderRef.once('value');
 
-        if (snapshot.exists()) {
-            const order = snapshot.val();
-            order.status = "completed";
-            await orderRef.set(order);
-            return order;
-        } else {
+        if (!snapshot.exists()) {
             throw new Error("Đơn hàng không tồn tại");
         }
+
+        const order = snapshot.val();
+        const items = order.items;
+
+        const insufficientProducts = [];
+
+        for (const item of items) {
+            const sku = item.sku;
+            const purchasedQuantity = item.quantity;
+
+            const productRef = db.ref(`products/${sku}`);
+            const productSnapshot = await productRef.once('value');
+
+            if (!productSnapshot.exists()) {
+                insufficientProducts.push({
+                    sku,
+                    reason: "Không tìm thấy sản phẩm"
+                });
+                continue;
+            }
+
+            const product = productSnapshot.val();
+            const available = product.quantity || 0;
+
+            if (purchasedQuantity > available) {
+                insufficientProducts.push({
+                    sku,
+                    name: product.name,
+                    requested: purchasedQuantity,
+                    available
+                });
+            }
+        }
+
+        if (insufficientProducts.length > 0) {
+            throw new Error("Một số sản phẩm không đủ tồn kho:\n" +
+                insufficientProducts.map(p =>
+                    `- ${p.name || "SKU " + p.sku}: cần ${p.requested}, còn ${p.available || 0}`
+                ).join('\n')
+            );
+        }
+
+        for (const item of items) {
+            const sku = item.sku;
+            const purchasedQuantity = item.quantity;
+
+            const productRef = db.ref(`products/${sku}`);
+            const productSnapshot = await productRef.once('value');
+
+            const product = productSnapshot.val();
+            const updatedQuantity = product.quantity - purchasedQuantity;
+
+            await productRef.update({
+                quantity: updatedQuantity
+            });
+        }
+
+        order.status = "completed";
+        await orderRef.set(order);
+
+        return order;
     } catch (error) {
         console.error("Lỗi khi thanh toán:", error);
+        throw error;
+    }
+}
+
+async function getBillFromTransactionId(transactionId) {
+    try {
+        const snapshot = await db.ref(`transactions/${transactionId}`).once('value');
+
+        if (snapshot.exists()) {
+            console.log(snapshot.val());
+            return snapshot.val();
+        } else {
+            return null;
+        }
+    } catch (error) {
+        console.error("Lỗi khi lấy hóa đơn:", error);
         throw error;
     }
 }
@@ -177,4 +265,5 @@ module.exports = {
     getProductsById,
     createOrder,
     makePayment,
+    getBillFromTransactionId,
 }

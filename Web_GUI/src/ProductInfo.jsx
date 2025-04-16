@@ -5,7 +5,7 @@ import {
     Alert, Typography, Divider,
     Button, Row, Col, Modal, Space, message, Table, Image
 } from 'antd';
-import {ShoppingCartOutlined, DropboxOutlined} from '@ant-design/icons';
+import { ShoppingCartOutlined, DropboxOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
@@ -16,7 +16,7 @@ const ProductInfo = () => {
     const [isLocked, setIsLocked] = useState(false);
     const [qrImage, setQrImage] = useState(null);
 
-    const API_URL = import.meta.env.VITE_API_URL;
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
     const windowIp = import.meta.env.VITE_WINDOW_IP;
     const port = import.meta.env.VITE_PORT;
 
@@ -29,10 +29,20 @@ const ProductInfo = () => {
         setIsLocked(true);
 
         try {
+            const expandedProducts = products.flatMap(product =>
+                Array(product.quantity).fill().map(() => ({
+                    rfid: product.rfid,
+                    sku: product.sku,
+                    name: product.name,
+                    price: product.price,
+                    image_url: product.image_url || ''
+                }))
+            );
+
             const response = await fetch(`${API_URL}/api/order`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ products })
+                body: JSON.stringify({ products: expandedProducts })
             });
 
             const result = await response.json();
@@ -51,7 +61,6 @@ const ProductInfo = () => {
             setIsLocked(false);
         }
     };
-
 
     const handleCloseModal = () => {
         setIsModalVisible(false);
@@ -74,8 +83,29 @@ const ProductInfo = () => {
                     setProducts([]);
                 } else {
                     setError(null);
-                    const newData = Array.isArray(data) ? data : [data];
-                    setProducts(prevProducts => [...prevProducts, ...newData]);
+                    const newItems = Array.isArray(data) ? data : [data];
+
+                    setProducts(prevProducts => {
+                        const updatedProducts = [...prevProducts];
+                        newItems.forEach(newItem => {
+                            if (newItem.error) return;
+                            const existingProductIndex = updatedProducts.findIndex(
+                                p => p.sku === newItem.sku && !p.error
+                            );
+
+                            if (existingProductIndex >= 0) {
+                                updatedProducts[existingProductIndex].quantity =
+                                    (updatedProducts[existingProductIndex].quantity || 1) + 1;
+                            } else {
+                                updatedProducts.push({
+                                    ...newItem,
+                                    quantity: 1
+                                });
+                            }
+                        });
+
+                        return updatedProducts;
+                    });
                 }
             }
         });
@@ -86,10 +116,14 @@ const ProductInfo = () => {
         });
 
         return () => socket.disconnect();
-    }, [isLocked, API_URL]);
+    }, [isLocked]);
 
-    const totalItems = products.length;
-    const totalPrice = products.reduce((acc, curr) => acc + (curr.price || 0), 0);
+    // Tính tổng số lượng và giá tiền
+    const totalItems = products.reduce((acc, curr) => acc + (curr.quantity || 1), 0);
+    const totalPrice = products.reduce((acc, curr) => {
+        const quantity = curr.quantity || 1;
+        return acc + (curr.price || 0) * quantity;
+    }, 0);
     const discount = 0;
     const finalPrice = totalPrice - discount;
 
@@ -133,6 +167,24 @@ const ProductInfo = () => {
             key: 'price',
             render: (price) => price ? `${price.toLocaleString()} đ` : '-',
         },
+        {
+            title: 'Số lượng',
+            dataIndex: 'quantity',
+            key: 'quantity',
+            width: 100,
+            render: (quantity, record) => !record.error ? (quantity || 1) : '-',
+        },
+        {
+            title: 'Thành tiền',
+            key: 'subtotal',
+            width: 120,
+            render: (_, record) => {
+                if (record.error) return '-';
+                const quantity = record.quantity || 1;
+                const subtotal = (record.price || 0) * quantity;
+                return `${subtotal.toLocaleString()} đ`;
+            },
+        },
     ];
 
     return (
@@ -162,7 +214,7 @@ const ProductInfo = () => {
                 width: '100%',
                 maxHeight: '90vh', // Giới hạn chiều cao để không tràn ra ngoài viewport nếu cần
             }}>
-                <Title level={3}><ShoppingCartOutlined />Hóa đơn thanh toán</Title>
+                <Title level={3}><ShoppingCartOutlined /> Hóa đơn thanh toán</Title>
 
                 {error && (
                     <Alert
@@ -170,28 +222,27 @@ const ProductInfo = () => {
                         description={error}
                         type="error"
                         showIcon
-                        style={{ marginBottom: 16 }}
+                        style={{ marginBottom: '16px' }}
                     />
                 )}
 
                 {!error && products.length > 0 ? (
-                    <>
-                        <div style={{ flexGrow: 1, overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                        <div style={{ flexGrow: 1, overflowY: 'auto', marginBottom: '24px' }}>
                             <Table
                                 dataSource={products}
                                 columns={columns}
                                 pagination={false}
                                 rowKey={(record, index) => index}
-                                style={{ marginBottom: 24 }}
                                 scroll={{ y: 300 }}
                             />
                         </div>
 
                         <Divider />
 
-                        <div style={{ fontSize: 16, marginBottom: 24, color: '#000' }}>
+                        <div style={{ fontSize: '16px', marginBottom: '24px', color: '#000' }}>
                             <Row justify="space-between">
-                                <Col>Sản phẩm</Col>
+                                <Col>Tổng số lượng</Col>
                                 <Col>{totalItems}</Col>
                             </Row>
                             <Row justify="space-between">
@@ -218,19 +269,19 @@ const ProductInfo = () => {
                         >
                             THANH TOÁN
                         </Button>
-                    </>
+                    </div>
                 ) : (
                     <div style={{
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        height: '100%', // Chiếm toàn bộ chiều cao của container cha
+                        height: '80%',
                         color: '#888'
                     }}>
-                        <div style={{ fontSize: 60, marginBottom: 16 }}><DropboxOutlined /></div>
-                        <Text style={{ fontSize: 18 }}>Chưa có sản phẩm nào</Text>
-                        <Text style={{ fontSize: 16, color: '#aaa' }}>Quét các sản phẩm để thêm vào giỏ hàng</Text>
+                        <div style={{ fontSize: '60px', marginBottom: '16px' }}><DropboxOutlined /></div>
+                        <Text style={{ fontSize: '18px' }}>Chưa có sản phẩm nào</Text>
+                        <Text style={{ fontSize: '16px', color: '#aaa' }}>Quét các sản phẩm để thêm vào giỏ hàng</Text>
                     </div>
                 )}
             </div>
@@ -241,23 +292,29 @@ const ProductInfo = () => {
                 footer={null}
                 centered
                 width={360}
+                style={{
+                    mask : {
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        backdropFilter: 'blur(5px)',
+                    }
+                }}
             >
-                <div style={{ textAlign: 'center', padding: 12 }}>
-                    <Title level={4}>Số tiền cần thanh toán</Title>
+                <div style={{ textAlign: 'center', padding: '12px' }}>
+                    <Title level={4}> Số tiền cần thanh toán</Title>
                     <Title level={3} style={{ color: '#1890ff' }}>
                         {finalPrice.toLocaleString()}đ
                     </Title>
                     <Text>Quét mã QR để xem hóa đơn</Text>
 
-                    <div style={{ marginTop: 16 }}>
+                    <div style={{ marginTop: '16px' }}>
                         {qrImage ? (
-                            <img src={qrImage} alt="QR Code" style={{ width: 180 }} />
+                            <img src={qrImage} alt="QR Code" style={{ width: '180px' }} />
                         ) : (
                             <Text>Đang tạo mã QR...</Text>
                         )}
                     </div>
 
-                    <Space style={{ marginTop: 20 }}>
+                    <Space style={{ marginTop: '20px' }}>
                         <Button onClick={handleCloseModal}>Đóng</Button>
                     </Space>
                 </div>
