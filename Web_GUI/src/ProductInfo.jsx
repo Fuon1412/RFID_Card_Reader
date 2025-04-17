@@ -189,7 +189,7 @@ const ProductInfo = () => {
 
     return (
         <div style={{
-            position: 'fixed', // Sử dụng position fixed để chiếm toàn bộ viewport
+            position: 'fixed',
             top: 0,
             left: 0,
             right: 0,
@@ -198,8 +198,8 @@ const ProductInfo = () => {
             justifyContent: 'center',
             alignItems: 'center',
             padding: '2rem',
-            backgroundColor: '#f5f5f5',
-            overflow: 'auto', // Thêm overflow để xử lý nội dung lớn hơn màn hình
+            backgroundColor: '#FFFCF9',
+            overflow: 'auto',
         }}>
             <div style={{
                 maxWidth: '1024px',
@@ -212,10 +212,19 @@ const ProductInfo = () => {
                 flexDirection: 'column',
                 justifyContent: 'space-between',
                 width: '100%',
-                maxHeight: '90vh', // Giới hạn chiều cao để không tràn ra ngoài viewport nếu cần
+                maxHeight: '90vh',
             }}>
-                <Title level={3}><ShoppingCartOutlined /> Hóa đơn thanh toán</Title>
-
+                <img
+                    src="/logo_speedy_gb.png"
+                    alt="Speedy Logo"
+                    style={{
+                        display: 'block',
+                        margin: '0 auto',
+                        width: '100px', 
+                        marginBottom: '8px', 
+                        marginTop: '-8px' 
+                    }}
+                />
                 {error && (
                     <Alert
                         message="Lỗi"
@@ -230,6 +239,7 @@ const ProductInfo = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                         <div style={{ flexGrow: 1, overflowY: 'auto', marginBottom: '24px' }}>
                             <Table
+                                bordered
                                 dataSource={products}
                                 columns={columns}
                                 pagination={false}
@@ -238,7 +248,7 @@ const ProductInfo = () => {
                             />
                         </div>
 
-                        <Divider />
+                        <Divider style={{ borderBlockWidth: '2px' }} />
 
                         <div style={{ fontSize: '16px', marginBottom: '24px', color: '#000' }}>
                             <Row justify="space-between">
@@ -253,7 +263,9 @@ const ProductInfo = () => {
                                 <Col>Chiết khấu</Col>
                                 <Col>{discount.toLocaleString()}đ</Col>
                             </Row>
-                            <Divider />
+                            <Divider style={{
+                                borderTop: '2px solid #000' 
+                            }} />
                             <Row justify="space-between" style={{ fontWeight: 'bold' }}>
                                 <Col>Tổng cộng</Col>
                                 <Col>{finalPrice.toLocaleString()}đ</Col>
@@ -264,7 +276,7 @@ const ProductInfo = () => {
                             type="primary"
                             size="large"
                             block
-                            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                            style={{ backgroundColor: '#419B79', borderColor: '#52c41a' }}
                             onClick={handlePayment}
                         >
                             THANH TOÁN
@@ -293,9 +305,17 @@ const ProductInfo = () => {
                 centered
                 width={360}
                 style={{
-                    mask : {
+                    mask: {
                         backgroundColor: 'rgba(0, 0, 0, 0.5)',
                         backdropFilter: 'blur(5px)',
+                    }
+                }}
+                mask={true}
+                styles={{
+                    mask: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                        backdropFilter: 'blur(6px)',
+                        WebkitBackdropFilter: 'blur(6px)' // Hỗ trợ Safari
                     }
                 }}
             >
@@ -315,7 +335,14 @@ const ProductInfo = () => {
                     </div>
 
                     <Space style={{ marginTop: '20px' }}>
-                        <Button onClick={handleCloseModal}>Đóng</Button>
+                        <Button
+                            onClick={handleCloseModal}
+                            style={{
+                                backgroundColor: '#0071bc', // màu giống ảnh
+                                color: '#fff',
+                                borderColor: '#005999' // viền đậm hơn chút
+                            }}
+                        >Đóng</Button>
                     </Space>
                 </div>
             </Modal>
