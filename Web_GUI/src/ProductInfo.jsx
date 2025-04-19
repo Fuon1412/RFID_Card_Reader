@@ -239,7 +239,6 @@ const ProductInfo = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                         <div style={{ flexGrow: 1, overflowY: 'auto', marginBottom: '24px' }}>
                             <Table
-                                bordered
                                 dataSource={products}
                                 columns={columns}
                                 pagination={false}
