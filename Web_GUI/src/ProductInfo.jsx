@@ -17,9 +17,6 @@ const ProductInfo = () => {
     const [qrImage, setQrImage] = useState(null);
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-    const windowIp = import.meta.env.VITE_WINDOW_IP;
-    const port = import.meta.env.VITE_PORT;
-
     const handlePayment = async () => {
         if (products.length === 0) {
             message.warning("Không có sản phẩm để thanh toán!");
@@ -49,7 +46,7 @@ const ProductInfo = () => {
             console.log("Kết quả tạo đơn hàng:", result);
             const transactionId = result;
 
-            const qrLink = `http://${windowIp}:${port}/invoice/${transactionId}`;
+            const qrLink = `${transactionId}`;
             const qr = await QRCode.toDataURL(qrLink);
             setQrImage(qr);
 
@@ -197,22 +194,22 @@ const ProductInfo = () => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            padding: '2rem',
+            padding: '0',
             backgroundColor: '#FFFCF9',
             overflow: 'auto',
         }}>
             <div style={{
-                maxWidth: '1024px',
-                height: 'auto',
+                maxWidth: '100%',
+                width: '100%',
+                height: '100%',
                 background: '#fff',
                 padding: '2rem',
-                borderRadius: '12px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                borderRadius: '0',
+                boxShadow: 'none',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                width: '100%',
-                maxHeight: '90vh',
+                maxHeight: '100vh',
             }}>
                 <img
                     src="/logo_speedy_gb.png"
@@ -220,9 +217,13 @@ const ProductInfo = () => {
                     style={{
                         display: 'block',
                         margin: '0 auto',
-                        width: '100px', 
-                        marginBottom: '8px', 
-                        marginTop: '-8px' 
+                        width: 'auto', // Thay đổi từ kích thước cố định sang auto
+                        height: 'auto',
+                        maxWidth: '180px', // Tăng kích thước tối đa
+                        maxHeight: '8vh', // Tăng chiều cao tối đa lên 8% chiều cao viewport
+                        objectFit: 'contain', // Đảm bảo ảnh vừa container và không bị méo
+                        marginBottom: '12px',
+                        marginTop: '12px'
                     }}
                 />
                 {error && (
@@ -243,7 +244,7 @@ const ProductInfo = () => {
                                 columns={columns}
                                 pagination={false}
                                 rowKey={(record, index) => index}
-                                scroll={{ y: 300 }}
+                                scroll={{ y: 'calc(100vh - 350px)' }}
                             />
                         </div>
 
@@ -263,7 +264,7 @@ const ProductInfo = () => {
                                 <Col>{discount.toLocaleString()}đ</Col>
                             </Row>
                             <Divider style={{
-                                borderTop: '2px solid #000' 
+                                borderTop: '2px solid #000'
                             }} />
                             <Row justify="space-between" style={{ fontWeight: 'bold' }}>
                                 <Col>Tổng cộng</Col>
@@ -314,7 +315,7 @@ const ProductInfo = () => {
                     mask: {
                         backgroundColor: 'rgba(0, 0, 0, 0.6)',
                         backdropFilter: 'blur(6px)',
-                        WebkitBackdropFilter: 'blur(6px)' // Hỗ trợ Safari
+                        WebkitBackdropFilter: 'blur(6px)'
                     }
                 }}
             >
@@ -337,9 +338,9 @@ const ProductInfo = () => {
                         <Button
                             onClick={handleCloseModal}
                             style={{
-                                backgroundColor: '#0071bc', // màu giống ảnh
+                                backgroundColor: '#0071bc',
                                 color: '#fff',
-                                borderColor: '#005999' // viền đậm hơn chút
+                                borderColor: '#005999'
                             }}
                         >Đóng</Button>
                     </Space>
